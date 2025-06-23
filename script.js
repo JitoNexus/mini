@@ -1,7 +1,7 @@
 // --- CONFIGURATION ---
 const API_BASE_URL = 'https://YOUR_API_URL_HERE'; // <-- CHANGE THIS
 let currentTheme = 'purple';
-let telegramWidgetLoaded = false;
+let tgUser = null;
 
 // --- THEME SWITCHER ---
 function setTheme(theme) {
@@ -26,7 +26,6 @@ function showScreen(screenId) {
     setTimeout(() => {
         screen.classList.add('active');
         gsap.fromTo(screen, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' });
-        // Animate shine and sparkles if instructions screen
         if (screenId === 'instructions-screen') {
             animateShine();
             animateSparkles();
@@ -34,55 +33,32 @@ function showScreen(screenId) {
     }, 400);
 }
 
-// --- TELEGRAM LOGIN WIDGET ---
-function renderTelegramLogin() {
-    const loginDiv = document.getElementById('telegram-login-button');
-    loginDiv.innerHTML = '';
-    telegramWidgetLoaded = false;
-    const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    script.setAttribute('data-telegram-login', 'jitoxai_bot');
-    script.setAttribute('data-size', 'large');
-    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-    script.setAttribute('data-request-access', 'write');
-    script.async = true;
-    script.onload = function() { telegramWidgetLoaded = true; };
-    loginDiv.appendChild(script);
-    setTimeout(() => {
-        if (!telegramWidgetLoaded && !document.getElementById('tg-fallback-btn')) {
-            const fallback = document.createElement('button');
-            fallback.id = 'tg-fallback-btn';
-            fallback.className = 'neon-btn';
-            fallback.innerHTML = '<i class="fa-brands fa-telegram"></i> Open Telegram Bot';
-            fallback.onclick = function() {
-                window.open('https://t.me/jitoxai_bot', '_blank');
-            };
-            loginDiv.appendChild(fallback);
-            const msg = document.createElement('div');
-            msg.className = 'glow-text';
-            msg.style.marginTop = '10px';
-            msg.innerHTML = 'If the Telegram login button does not appear, <br>click the button above to open the bot.';
-            loginDiv.appendChild(msg);
-        }
-    }, 3000);
+// --- MINI-APP AUTH LOGIC ---
+function checkTelegramWebApp() {
+    const tgError = document.getElementById('tg-error');
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+        tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        tgError.style.display = 'none';
+        showScreen('instructions-screen');
+    } else {
+        // Not in Telegram WebApp
+        tgError.innerHTML = '<h2>🚫 Not in Telegram</h2><p>Please open this mini-app from the <b>@JITOXAI2</b> Telegram bot.<br><br><span class="shiny-gradient">Only real traders get access.</span></p>';
+        tgError.style.display = 'block';
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    }
 }
 
-// --- HANDLE TELEGRAM LOGIN ---
-window.onTelegramAuth = function(user) {
-    window.tgUser = user;
-    showScreen('instructions-screen');
-};
-
 document.addEventListener('DOMContentLoaded', function() {
+    checkTelegramWebApp();
     document.getElementById('fetch-wallet-btn').onclick = async function() {
-        if (!window.tgUser) {
-            alert('Please login with Telegram first.');
+        if (!tgUser) {
+            alert('Please open this mini-app from the Telegram bot.');
             return;
         }
         this.disabled = true;
         this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
         try {
-            const res = await fetch(`${API_BASE_URL}/api/get_wallet?user_id=${window.tgUser.id}`);
+            const res = await fetch(`${API_BASE_URL}/api/get_wallet?user_id=${tgUser.id}`);
             const data = await res.json();
             if (data && data.wallet_address) {
                 showWalletSection(data.wallet_address);
@@ -160,12 +136,10 @@ function animateShine() {
     const shine = document.getElementById('shine-effect');
     if (shine) {
         shine.style.animation = 'none';
-        // Restart animation
         void shine.offsetWidth;
         shine.style.animation = 'shineEffectMove 2.5s linear infinite';
     }
 }
-// --- SPARKLE ANIMATION ---
 function animateSparkles() {
     document.querySelectorAll('.sparkle').forEach(sparkle => {
         gsap.fromTo(sparkle, { scale: 1, opacity: 0.7 }, { scale: 1.3, opacity: 1, yoyo: true, repeat: -1, duration: 0.7, ease: 'power1.inOut' });
@@ -225,8 +199,6 @@ class ParticleSystem {
 
 // --- INITIALIZE ---
 window.onload = function() {
-    renderTelegramLogin();
-    showScreen('login-screen');
     animateBackground();
     gsap.to('.pulse', { scale: 1.08, repeat: -1, yoyo: true, duration: 0.7, ease: 'power1.inOut' });
     window.particleSystem = new ParticleSystem(document.getElementById('bg-particles'));
