@@ -17,6 +17,10 @@ body {
     filter: blur(0px) brightness(1.1);
     transition: background 0.5s;
 }
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
 #bg-particles {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
@@ -215,4 +219,4 @@ body {
         font-size: 1.1rem;
     }
 }
-/* Add more styles for animated spinners, progress, and future screens as needed */ 
+/* Add more styles for animated spinners, progress, and future screens as needed */
