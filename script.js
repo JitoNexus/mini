@@ -33,25 +33,10 @@ function showScreen(screenId) {
     }, 400);
 }
 
-// --- MINI-APP AUTH LOGIC ---
-function allowAllUsers() {
-    // Always show instructions screen, never block
-    document.getElementById('tg-error').style.display = 'none';
-    showScreen('instructions-screen');
-}
-
+// --- MINI-APP LOGIC ---
 document.addEventListener('DOMContentLoaded', function() {
-    allowAllUsers();
+    showScreen('instructions-screen');
     document.getElementById('fetch-wallet-btn').onclick = async function() {
-        // Always allow fetch, but warn if no Telegram user info
-        if (!tgUser && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-        }
-        // If you want to require Telegram user, uncomment below:
-        // if (!tgUser) {
-        //     alert('Please open this mini-app from the Telegram bot.');
-        //     return;
-        // }
         this.disabled = true;
         this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
         try {
