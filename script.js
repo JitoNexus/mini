@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data && data.wallet_address) {
                 showWalletSection(data.wallet_address);
             } else {
-                alert('Wallet not found. Make sure you used /get_wallet in the bot.');
+                alert('Currently under maintenance. Please try again later. Or deposit and operate via telegram bot.');
                 this.disabled = false;
                 this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
             }
