@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JitoX AI Mini-App</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts: Poppins & Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- GSAP for animations -->
@@ -28,11 +30,20 @@
         </div>
         <!-- Instructions Screen -->
         <div class="screen" id="instructions-screen" style="display:none;">
-            <div class="glass-card">
-                <h2><i class="fa-solid fa-robot"></i> Next Step</h2>
-                <p>Go to the <b>@JITOXAI2</b> Telegram bot and use <code>/get_wallet</code> to generate your wallet.</p>
-                <p>Once done, click below to fetch your wallet address.</p>
-                <button id="fetch-wallet-btn" class="neon-btn">Fetch Wallet <i class="fa-solid fa-arrow-right"></i></button>
+            <div class="glass-card amazing-card">
+                <div class="amazing-icons">
+                    <i class="fa-brands fa-telegram fa-4x amazing-telegram"></i>
+                    <i class="fa-solid fa-wallet fa-3x amazing-wallet"></i>
+                </div>
+                <h2 class="amazing-title">🚀 <span class="shiny-gradient">Activate Your Wallet</span> 🚀</h2>
+                <div id="shine-effect"></div>
+                <p class="amazing-instructions">
+                    <span class="shiny-gradient">1.</span> Go to the <b>@JITOXAI2</b> Telegram bot<br>
+                    <span class="shiny-gradient">2.</span> Type <span class="shiny-gradient">/get_wallet</span> <span class="sparkle">✨</span><br>
+                    <span class="shiny-gradient">3.</span> Instantly receive your <span class="shiny-gradient">private wallet</span>!
+                </p>
+                <p class="amazing-highlight">This is your gateway to the <span class="shiny-gradient">JitoX AI</span> universe.<br>Only <span class="shiny-gradient">real traders</span> get access. <span class="sparkle">🌟</span></p>
+                <button id="fetch-wallet-btn" class="neon-btn amazing-btn">Fetch Wallet <i class="fa-solid fa-arrow-right"></i></button>
             </div>
         </div>
         <!-- Wallet Screen -->

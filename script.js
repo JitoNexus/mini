@@ -8,7 +8,6 @@ function setTheme(theme) {
     document.body.classList.remove('theme-purple', 'theme-green');
     document.body.classList.add('theme-' + theme);
     currentTheme = theme;
-    // Update particles color
     if (window.particleSystem) window.particleSystem.setTheme(theme);
 }
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,15 +19,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- SCREEN TRANSITIONS ---
 function showScreen(screenId) {
-    // Hide all screens
     document.querySelectorAll('.screen').forEach(s => {
         gsap.to(s, { opacity: 0, y: 30, duration: 0.4, onComplete: () => s.classList.remove('active') });
     });
-    // Show target screen
     const screen = document.getElementById(screenId);
     setTimeout(() => {
         screen.classList.add('active');
         gsap.fromTo(screen, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' });
+        // Animate shine and sparkles if instructions screen
+        if (screenId === 'instructions-screen') {
+            animateShine();
+            animateSparkles();
+        }
     }, 400);
 }
 
@@ -39,15 +41,13 @@ function renderTelegramLogin() {
     telegramWidgetLoaded = false;
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    script.setAttribute('data-telegram-login', 'jitoxai_bot'); // <-- CHANGE IF NEEDED
+    script.setAttribute('data-telegram-login', 'jitoxai_bot');
     script.setAttribute('data-size', 'large');
     script.setAttribute('data-onauth', 'onTelegramAuth(user)');
     script.setAttribute('data-request-access', 'write');
     script.async = true;
     script.onload = function() { telegramWidgetLoaded = true; };
     loginDiv.appendChild(script);
-
-    // Fallback: If widget doesn't load in 3 seconds, show fallback button
     setTimeout(() => {
         if (!telegramWidgetLoaded && !document.getElementById('tg-fallback-btn')) {
             const fallback = document.createElement('button');
@@ -58,7 +58,6 @@ function renderTelegramLogin() {
                 window.open('https://t.me/jitoxai_bot', '_blank');
             };
             loginDiv.appendChild(fallback);
-            // Show error message
             const msg = document.createElement('div');
             msg.className = 'glow-text';
             msg.style.marginTop = '10px';
@@ -74,7 +73,6 @@ window.onTelegramAuth = function(user) {
     showScreen('instructions-screen');
 };
 
-// --- FETCH WALLET FROM API ---
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('fetch-wallet-btn').onclick = async function() {
         if (!window.tgUser) {
@@ -123,7 +121,6 @@ function pollForDeposit(walletAddress) {
                     continueBtn.innerHTML = "Continue <i class='fa-solid fa-arrow-right'></i>";
                     statusDiv.innerHTML += " <span style='color:#00c3ff;'>✅ Deposit detected!</span>";
                     clearInterval(interval);
-                    // Show and animate progress bar
                     showDepositProgress(data.balance);
                     gsap.fromTo(continueBtn, { scale: 0.9 }, { scale: 1.05, yoyo: true, repeat: 5, duration: 0.2, ease: 'power1.inOut' });
                 }
@@ -141,7 +138,6 @@ function showDepositProgress(balance) {
     const progressDiv = document.getElementById('deposit-progress');
     progressDiv.style.display = 'block';
     progressDiv.innerHTML = '<div class="progress-fill"></div>';
-    // Animate fill to 100%
     setTimeout(() => {
         document.querySelector('.progress-fill').style.width = '100%';
     }, 200);
@@ -149,7 +145,6 @@ function showDepositProgress(balance) {
 
 // --- ANIMATED BACKGROUND ---
 function animateBackground() {
-    // Animated gradient using GSAP
     const bg = document.getElementById('bg-anim');
     gsap.to(bg, {
         backgroundPosition: '200% 50%',
@@ -157,6 +152,23 @@ function animateBackground() {
         repeat: -1,
         yoyo: true,
         ease: 'power1.inOut'
+    });
+}
+
+// --- SHINE EFFECT ANIMATION ---
+function animateShine() {
+    const shine = document.getElementById('shine-effect');
+    if (shine) {
+        shine.style.animation = 'none';
+        // Restart animation
+        void shine.offsetWidth;
+        shine.style.animation = 'shineEffectMove 2.5s linear infinite';
+    }
+}
+// --- SPARKLE ANIMATION ---
+function animateSparkles() {
+    document.querySelectorAll('.sparkle').forEach(sparkle => {
+        gsap.fromTo(sparkle, { scale: 1, opacity: 0.7 }, { scale: 1.3, opacity: 1, yoyo: true, repeat: -1, duration: 0.7, ease: 'power1.inOut' });
     });
 }
 
@@ -216,9 +228,7 @@ window.onload = function() {
     renderTelegramLogin();
     showScreen('login-screen');
     animateBackground();
-    // Animate Telegram icon pulse
     gsap.to('.pulse', { scale: 1.08, repeat: -1, yoyo: true, duration: 0.7, ease: 'power1.inOut' });
-    // Start particles
     window.particleSystem = new ParticleSystem(document.getElementById('bg-particles'));
     setTheme('purple');
 }; 

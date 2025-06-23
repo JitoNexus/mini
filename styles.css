@@ -2,7 +2,7 @@ body {
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Poppins', Arial, sans-serif;
     background: transparent;
     color: #fff;
     overflow-x: hidden;
@@ -97,6 +97,7 @@ body {
     transition: box-shadow 0.3s, border 0.3s, background 0.5s;
 }
 .glass-card h1, .glass-card h2 {
+    font-family: 'Orbitron', 'Poppins', Arial, sans-serif;
     font-weight: 700;
     letter-spacing: 1px;
     margin-bottom: 12px;
@@ -218,5 +219,120 @@ body {
         width: 40px; height: 40px;
         font-size: 1.1rem;
     }
+    .amazing-title {
+        font-size: 1.2rem;
+    }
+    .amazing-instructions {
+        font-size: 1rem;
+    }
 }
 /* Add more styles for animated spinners, progress, and future screens as needed */
+/* AMAZING INSTRUCTIONS SCREEN */
+.amazing-card {
+    box-shadow: 0 0 60px 10px var(--neon1), 0 0 32px 8px var(--neon2), 0 0 120px 30px var(--neon1)44;
+    border: 2.5px solid var(--neon2);
+    animation: amazingPulse 2s infinite alternate;
+    position: relative;
+    overflow: hidden;
+}
+@keyframes amazingPulse {
+    0% { box-shadow: 0 0 60px 10px var(--neon1), 0 0 32px 8px var(--neon2), 0 0 120px 30px var(--neon1)44; }
+    100% { box-shadow: 0 0 100px 30px var(--neon2), 0 0 64px 16px var(--neon1), 0 0 200px 60px var(--neon2)44; }
+}
+.amazing-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 12px;
+}
+.amazing-telegram {
+    color: #229ED9;
+    filter: drop-shadow(0 0 16px #00c3ffcc);
+    animation: amazingIconPulse 1.2s infinite alternate;
+}
+.amazing-wallet {
+    color: var(--neon2);
+    filter: drop-shadow(0 0 12px var(--neon2));
+    animation: amazingIconPulse 1.5s infinite alternate;
+}
+@keyframes amazingIconPulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.12) rotate(-6deg); }
+}
+.amazing-title {
+    font-family: 'Orbitron', 'Poppins', Arial, sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--neon1), var(--neon2), #fff, var(--neon1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    filter: drop-shadow(0 0 8px var(--neon2));
+    position: relative;
+}
+.shiny-gradient {
+    background: linear-gradient(90deg, #fff, var(--neon2), var(--neon1), #fff 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    font-weight: 700;
+    animation: shinyMove 2.5s linear infinite;
+}
+@keyframes shinyMove {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+#shine-effect {
+    position: absolute;
+    top: 0; left: -100px; width: 100px; height: 100%;
+    background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.2) 100%);
+    filter: blur(8px);
+    pointer-events: none;
+    animation: shineEffectMove 2.5s linear infinite;
+    z-index: 2;
+}
+@keyframes shineEffectMove {
+    0% { left: -100px; }
+    100% { left: 100%; }
+}
+.amazing-instructions {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 18px 0 10px 0;
+    color: var(--text);
+    letter-spacing: 1px;
+    line-height: 1.6;
+    text-shadow: 0 0 8px var(--neon2)88;
+}
+.amazing-highlight {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--neon2);
+    margin-bottom: 18px;
+    text-shadow: 0 0 8px var(--neon2)cc;
+}
+.amazing-btn {
+    font-size: 1.2rem;
+    padding: 16px 40px;
+    margin-top: 18px;
+    box-shadow: 0 0 24px 4px var(--neon2)99;
+    animation: amazingBtnPulse 1.2s infinite alternate;
+}
+@keyframes amazingBtnPulse {
+    0% { box-shadow: 0 0 24px 4px var(--neon2)99; }
+    100% { box-shadow: 0 0 48px 12px var(--neon1)cc; }
+}
+.sparkle {
+    color: #fffbe6;
+    text-shadow: 0 0 8px #ffe600, 0 0 16px #fff;
+    animation: sparkleAnim 1.2s infinite alternate;
+}
+@keyframes sparkleAnim {
+    0% { filter: brightness(1.2); }
+    100% { filter: brightness(2.2) drop-shadow(0 0 8px #ffe600); }
+}
