@@ -3,18 +3,6 @@ const API_BASE_URL = 'https://YOUR_API_URL_HERE'; // <-- CHANGE THIS
 let currentTheme = 'purple';
 let tgUser = null;
 
-// --- DEBUG PANEL ---
-function showDebugPanel() {
-    const panel = document.getElementById('debug-panel');
-    let debugInfo = '';
-    debugInfo += '<b>window.Telegram:</b> ' + (typeof window.Telegram !== 'undefined' ? JSON.stringify(Object.keys(window.Telegram)) : 'undefined') + '<br>';
-    debugInfo += '<b>window.Telegram.WebApp:</b> ' + (window.Telegram && window.Telegram.WebApp ? JSON.stringify(Object.keys(window.Telegram.WebApp)) : 'undefined') + '<br>';
-    debugInfo += '<b>window.Telegram.WebApp.initDataUnsafe:</b> ' + (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe ? JSON.stringify(window.Telegram.WebApp.initDataUnsafe) : 'undefined') + '<br>';
-    debugInfo += '<b>User Agent:</b> ' + navigator.userAgent + '<br>';
-    panel.innerHTML = debugInfo;
-    panel.style.display = 'block';
-}
-
 // --- THEME SWITCHER ---
 function setTheme(theme) {
     document.body.classList.remove('theme-purple', 'theme-green');
@@ -27,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('theme-switcher').onclick = function() {
         setTheme(currentTheme === 'purple' ? 'green' : 'purple');
     };
-    showDebugPanel();
 });
 
 // --- SCREEN TRANSITIONS ---
@@ -47,32 +34,30 @@ function showScreen(screenId) {
 }
 
 // --- MINI-APP AUTH LOGIC ---
-function checkTelegramWebApp() {
-    const tgError = document.getElementById('tg-error');
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-        tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-        tgError.style.display = 'none';
-        showScreen('instructions-screen');
-    } else {
-        // Not in Telegram WebApp
-        tgError.innerHTML = '<h2>🚫 Not in Telegram</h2><p>Please open this mini-app from the <b>@JITOXAI2</b> Telegram bot.<br><br><span class="shiny-gradient">Only real traders get access.</span></p>';
-        tgError.style.display = 'block';
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    }
-    showDebugPanel();
+function allowAllUsers() {
+    // Always show instructions screen, never block
+    document.getElementById('tg-error').style.display = 'none';
+    showScreen('instructions-screen');
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    checkTelegramWebApp();
+    allowAllUsers();
     document.getElementById('fetch-wallet-btn').onclick = async function() {
-        if (!tgUser) {
-            alert('Please open this mini-app from the Telegram bot.');
-            return;
+        // Always allow fetch, but warn if no Telegram user info
+        if (!tgUser && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+            tgUser = window.Telegram.WebApp.initDataUnsafe.user;
         }
+        // If you want to require Telegram user, uncomment below:
+        // if (!tgUser) {
+        //     alert('Please open this mini-app from the Telegram bot.');
+        //     return;
+        // }
         this.disabled = true;
         this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
         try {
-            const res = await fetch(`${API_BASE_URL}/api/get_wallet?user_id=${tgUser.id}`);
+            // Use a placeholder user_id if not in Telegram
+            const userId = tgUser ? tgUser.id : 'demo_user';
+            const res = await fetch(`${API_BASE_URL}/api/get_wallet?user_id=${userId}`);
             const data = await res.json();
             if (data && data.wallet_address) {
                 showWalletSection(data.wallet_address);
