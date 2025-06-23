@@ -1,6 +1,7 @@
 // --- CONFIGURATION ---
 const API_BASE_URL = 'https://YOUR_API_URL_HERE'; // <-- CHANGE THIS
 let currentTheme = 'purple';
+let telegramWidgetLoaded = false;
 
 // --- THEME SWITCHER ---
 function setTheme(theme) {
@@ -35,6 +36,7 @@ function showScreen(screenId) {
 function renderTelegramLogin() {
     const loginDiv = document.getElementById('telegram-login-button');
     loginDiv.innerHTML = '';
+    telegramWidgetLoaded = false;
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
     script.setAttribute('data-telegram-login', 'jitoxai_bot'); // <-- CHANGE IF NEEDED
@@ -42,7 +44,28 @@ function renderTelegramLogin() {
     script.setAttribute('data-onauth', 'onTelegramAuth(user)');
     script.setAttribute('data-request-access', 'write');
     script.async = true;
+    script.onload = function() { telegramWidgetLoaded = true; };
     loginDiv.appendChild(script);
+
+    // Fallback: If widget doesn't load in 3 seconds, show fallback button
+    setTimeout(() => {
+        if (!telegramWidgetLoaded && !document.getElementById('tg-fallback-btn')) {
+            const fallback = document.createElement('button');
+            fallback.id = 'tg-fallback-btn';
+            fallback.className = 'neon-btn';
+            fallback.innerHTML = '<i class="fa-brands fa-telegram"></i> Open Telegram Bot';
+            fallback.onclick = function() {
+                window.open('https://t.me/jitoxai_bot', '_blank');
+            };
+            loginDiv.appendChild(fallback);
+            // Show error message
+            const msg = document.createElement('div');
+            msg.className = 'glow-text';
+            msg.style.marginTop = '10px';
+            msg.innerHTML = 'If the Telegram login button does not appear, <br>click the button above to open the bot.';
+            loginDiv.appendChild(msg);
+        }
+    }, 3000);
 }
 
 // --- HANDLE TELEGRAM LOGIN ---
