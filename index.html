@@ -5,27 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JitoX AI Mini-App</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://telegram.org/js/telegram-widget.js?22"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
 <body>
+    <!-- Animated background: gradient + particles/waves -->
+    <div id="bg-anim"></div>
+    <canvas id="bg-particles"></canvas>
+    <!-- Optional: SVG waves (for future use) -->
+    <!-- <svg id="bg-waves"></svg> -->
     <div class="container">
-        <h1>JitoX AI Mini-App</h1>
-        <div id="login-section">
-            <h2>Connect your Telegram</h2>
-            <div id="telegram-login-button"></div>
+        <!-- Theme Switcher Button -->
+        <button id="theme-switcher" aria-label="Switch Theme"><i class="fa-solid fa-circle-half-stroke"></i></button>
+        <!-- Login Screen -->
+        <div class="screen" id="login-screen">
+            <div class="glass-card">
+                <div class="glow-circle pulse"><i class="fa-brands fa-telegram fa-3x"></i></div>
+                <h1>Welcome to JitoX AI</h1>
+                <p class="subtitle">Connect your Telegram account to begin</p>
+                <div id="telegram-login-button"></div>
+            </div>
         </div>
-        <div id="instructions-section" style="display:none;">
-            <h2>Next Step</h2>
-            <p>Go to the <b>@JITOXAI2</b> Telegram bot and use <code>/get_wallet</code> to generate your wallet.</p>
-            <p>Once done, click below to fetch your wallet address.</p>
-            <button id="fetch-wallet-btn">Fetch Wallet</button>
+        <!-- Instructions Screen -->
+        <div class="screen" id="instructions-screen" style="display:none;">
+            <div class="glass-card">
+                <h2><i class="fa-solid fa-robot"></i> Next Step</h2>
+                <p>Go to the <b>@JITOXAI2</b> Telegram bot and use <code>/get_wallet</code> to generate your wallet.</p>
+                <p>Once done, click below to fetch your wallet address.</p>
+                <button id="fetch-wallet-btn" class="neon-btn">Fetch Wallet <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
         </div>
-        <div id="wallet-section" style="display:none;">
-            <h2>Your Deposit Wallet</h2>
-            <div id="wallet-address" class="wallet-address"></div>
-            <p>Deposit <b>2 SOL</b>, <b>5 SOL</b>, or <b>10 SOL</b> to this address to continue.</p>
-            <div id="deposit-status">Waiting for deposit...</div>
-            <button id="continue-btn" disabled>Continue</button>
+        <!-- Wallet Screen -->
+        <div class="screen" id="wallet-screen" style="display:none;">
+            <div class="glass-card">
+                <h2><i class="fa-solid fa-wallet"></i> Your Deposit Wallet</h2>
+                <div id="wallet-address" class="wallet-address glow-text"></div>
+                <p>Deposit <b>2 SOL</b>, <b>5 SOL</b>, or <b>10 SOL</b> to this address to continue.</p>
+                <div id="deposit-status" class="glow-text"><i class="fa-solid fa-spinner fa-spin"></i> Waiting for deposit...</div>
+                <!-- Animated progress bar/chart after deposit -->
+                <div id="deposit-progress" style="display:none;"></div>
+                <button id="continue-btn" class="neon-btn" disabled>Continue <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>

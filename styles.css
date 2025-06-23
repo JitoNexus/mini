@@ -1,80 +1,218 @@
 body {
-    background: #181A20;
-    color: #fff;
-    font-family: 'Segoe UI', Arial, sans-serif;
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: transparent;
+    color: #fff;
+    overflow-x: hidden;
+    transition: background 0.5s;
 }
-
+#bg-anim {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 0;
+    background: linear-gradient(120deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
+    animation: gradientMove 10s ease-in-out infinite alternate;
+    filter: blur(0px) brightness(1.1);
+    transition: background 0.5s;
+}
+#bg-particles {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 1;
+    pointer-events: none;
+}
+/* Theme Variables */
+.theme-purple {
+    --bg1: #2b1055;
+    --bg2: #6f00ff;
+    --bg3: #00c3ff;
+    --neon1: #6f00ff;
+    --neon2: #00c3ff;
+    --glass: rgba(30, 20, 60, 0.7);
+    --border: rgba(110,86,207,0.5);
+    --text: #b388ff;
+    --accent: #fff;
+}
+.theme-green {
+    --bg1: #0a2e1a;
+    --bg2: #00ff88;
+    --bg3: #ffe600;
+    --neon1: #00ff88;
+    --neon2: #ffe600;
+    --glass: rgba(20, 40, 30, 0.7);
+    --border: rgba(0,255,136,0.4);
+    --text: #eaffd0;
+    --accent: #fff;
+}
 .container {
-    max-width: 400px;
-    margin: 40px auto;
-    background: #23263A;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-    padding: 32px 24px 24px 24px;
-    text-align: center;
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-
-h1 {
-    font-size: 2rem;
-    margin-bottom: 16px;
-    letter-spacing: 1px;
-}
-
-h2 {
-    font-size: 1.2rem;
-    margin-bottom: 12px;
-    color: #FFD700;
-}
-
-button {
-    background: linear-gradient(90deg, #6E56CF 0%, #FFD700 100%);
-    color: #181A20;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 1rem;
-    font-weight: bold;
-    margin: 12px 0;
+#theme-switcher {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 10;
+    background: var(--glass);
+    border: 2px solid var(--neon1);
+    color: var(--neon2);
+    border-radius: 50%;
+    width: 48px; height: 48px;
+    box-shadow: 0 0 16px 2px var(--neon1), 0 0 8px 1px var(--neon2);
+    font-size: 1.5rem;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-button:disabled {
-    background: #444;
+#theme-switcher:hover {
+    background: var(--neon2);
+    color: var(--bg1);
+    border: 2px solid var(--neon2);
+}
+.glass-card {
+    background: var(--glass);
+    border-radius: 24px;
+    box-shadow: 0 8px 40px 0 var(--neon1), 0 1.5px 8px 0 var(--neon2);
+    border: 2px solid var(--border);
+    backdrop-filter: blur(16px) saturate(1.2);
+    padding: 36px 28px 32px 28px;
+    max-width: 350px;
+    width: 90vw;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    transition: box-shadow 0.3s, border 0.3s, background 0.5s;
+}
+.glass-card h1, .glass-card h2 {
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    color: var(--text);
+    text-shadow: 0 0 8px var(--neon1)88;
+}
+.glass-card .subtitle {
+    color: var(--accent);
+    margin-bottom: 18px;
+    font-size: 1.1rem;
+}
+.glow-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px; height: 70px;
+    margin: 0 auto 18px auto;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--neon1) 60%, var(--neon2) 100%);
+    box-shadow: 0 0 32px 8px var(--neon1)99, 0 0 12px 2px var(--neon2)99;
+    color: #fff;
+    position: relative;
+}
+.pulse {
+    animation: pulseGlow 1.5s infinite alternate;
+}
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 32px 8px var(--neon1)99, 0 0 12px 2px var(--neon2)99; }
+    100% { box-shadow: 0 0 48px 16px var(--neon1)cc, 0 0 24px 6px var(--neon2)cc; }
+}
+.neon-btn {
+    background: linear-gradient(90deg, var(--neon1) 0%, var(--neon2) 100%);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 18px 0 0 0;
+    cursor: pointer;
+    box-shadow: 0 0 16px 2px var(--neon1)88, 0 0 8px 1px var(--neon2)88;
+    transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+    outline: none;
+    position: relative;
+}
+.neon-btn:disabled {
+    background: #3a2a5a;
     color: #aaa;
+    box-shadow: none;
     cursor: not-allowed;
 }
+.neon-btn:hover:not(:disabled) {
+    background: linear-gradient(90deg, var(--neon2) 0%, var(--neon1) 100%);
+    color: #fff;
+    box-shadow: 0 0 32px 8px var(--neon2)cc, 0 0 16px 4px var(--neon1)cc;
+}
 .wallet-address {
-    background: #181A20;
-    border: 1px solid #FFD700;
-    border-radius: 8px;
-    padding: 10px;
+    background: rgba(60, 40, 100, 0.7);
+    border: 1.5px solid var(--neon2);
+    border-radius: 10px;
+    padding: 12px;
     font-family: monospace;
     font-size: 1.1rem;
-    margin: 12px 0 16px 0;
+    margin: 16px 0 18px 0;
     word-break: break-all;
+    color: #fff;
+    box-shadow: 0 0 12px 2px var(--neon2)55;
 }
-#deposit-status {
-    margin: 10px 0 16px 0;
-    font-size: 1rem;
-    color: #FFD700;
+.glow-text {
+    color: var(--text);
+    text-shadow: 0 0 8px var(--neon1), 0 0 4px var(--neon2);
+    font-weight: 600;
+}
+.screen {
+    display: none;
+    transition: opacity 0.5s, transform 0.5s;
+    opacity: 0;
+    transform: translateY(30px);
+}
+.screen.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+/* Progress Bar/Chart */
+#deposit-progress {
+    margin: 18px 0 8px 0;
+    width: 100%;
+    height: 18px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 8px 2px var(--neon2)44;
+    position: relative;
+}
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--neon1), var(--neon2));
+    border-radius: 10px;
+    box-shadow: 0 0 12px 2px var(--neon1)99;
+    transition: width 1s cubic-bezier(.4,2,.6,1);
 }
 @media (max-width: 500px) {
-    .container {
+    .glass-card {
         max-width: 98vw;
-        padding: 16px 4vw 16px 4vw;
+        padding: 18vw 4vw 10vw 4vw;
     }
-    h1 {
-        font-size: 1.3rem;
+    h1, h2 {
+        font-size: 1.2rem;
     }
-    h2 {
+    .neon-btn {
         font-size: 1rem;
+        padding: 12px 10vw;
     }
-    button {
-        font-size: 0.95rem;
-        padding: 10px 10vw;
+    #theme-switcher {
+        top: 12px;
+        right: 12px;
+        width: 40px; height: 40px;
+        font-size: 1.1rem;
     }
 }
-/* Add more styles as needed for notifications, error messages, etc. */ 
+/* Add more styles for animated spinners, progress, and future screens as needed */ 

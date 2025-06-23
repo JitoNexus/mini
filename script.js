@@ -1,6 +1,35 @@
 // --- CONFIGURATION ---
-// Set your backend API base URL here (e.g., ngrok, Railway, Render, etc.)
 const API_BASE_URL = 'https://YOUR_API_URL_HERE'; // <-- CHANGE THIS
+let currentTheme = 'purple';
+
+// --- THEME SWITCHER ---
+function setTheme(theme) {
+    document.body.classList.remove('theme-purple', 'theme-green');
+    document.body.classList.add('theme-' + theme);
+    currentTheme = theme;
+    // Update particles color
+    if (window.particleSystem) window.particleSystem.setTheme(theme);
+}
+document.addEventListener('DOMContentLoaded', function() {
+    setTheme('purple');
+    document.getElementById('theme-switcher').onclick = function() {
+        setTheme(currentTheme === 'purple' ? 'green' : 'purple');
+    };
+});
+
+// --- SCREEN TRANSITIONS ---
+function showScreen(screenId) {
+    // Hide all screens
+    document.querySelectorAll('.screen').forEach(s => {
+        gsap.to(s, { opacity: 0, y: 30, duration: 0.4, onComplete: () => s.classList.remove('active') });
+    });
+    // Show target screen
+    const screen = document.getElementById(screenId);
+    setTimeout(() => {
+        screen.classList.add('active');
+        gsap.fromTo(screen, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' });
+    }, 400);
+}
 
 // --- TELEGRAM LOGIN WIDGET ---
 function renderTelegramLogin() {
@@ -18,80 +47,155 @@ function renderTelegramLogin() {
 
 // --- HANDLE TELEGRAM LOGIN ---
 window.onTelegramAuth = function(user) {
-    // Save user info (id, username, etc.)
     window.tgUser = user;
-    document.getElementById('login-section').style.display = 'none';
-    document.getElementById('instructions-section').style.display = 'block';
+    showScreen('instructions-screen');
 };
 
 // --- FETCH WALLET FROM API ---
-document.getElementById('fetch-wallet-btn').onclick = async function() {
-    if (!window.tgUser) {
-        alert('Please login with Telegram first.');
-        return;
-    }
-    // Show loading
-    this.disabled = true;
-    this.textContent = 'Fetching...';
-    // --- API CALL: get_wallet ---
-    // You must implement this endpoint in your backend!
-    // Example: GET /api/get_wallet?user_id=123456
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/get_wallet?user_id=${window.tgUser.id}`);
-        const data = await res.json();
-        if (data && data.wallet_address) {
-            showWalletSection(data.wallet_address);
-        } else {
-            alert('Wallet not found. Make sure you used /get_wallet in the bot.');
-            this.disabled = false;
-            this.textContent = 'Fetch Wallet';
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('fetch-wallet-btn').onclick = async function() {
+        if (!window.tgUser) {
+            alert('Please login with Telegram first.');
+            return;
         }
-    } catch (e) {
-        alert('Error fetching wallet. Check your API URL and bot.');
-        this.disabled = false;
-        this.textContent = 'Fetch Wallet';
-    }
-};
+        this.disabled = true;
+        this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/get_wallet?user_id=${window.tgUser.id}`);
+            const data = await res.json();
+            if (data && data.wallet_address) {
+                showWalletSection(data.wallet_address);
+            } else {
+                alert('Wallet not found. Make sure you used /get_wallet in the bot.');
+                this.disabled = false;
+                this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
+            }
+        } catch (e) {
+            alert('Error fetching wallet. Check your API URL and bot.');
+            this.disabled = false;
+            this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
+        }
+    };
+});
 
-// --- SHOW WALLET SECTION & START POLLING FOR DEPOSIT ---
 function showWalletSection(walletAddress) {
-    document.getElementById('instructions-section').style.display = 'none';
-    document.getElementById('wallet-section').style.display = 'block';
     document.getElementById('wallet-address').textContent = walletAddress;
-    // Start polling for deposit
+    showScreen('wallet-screen');
     pollForDeposit(walletAddress);
 }
 
 // --- POLL FOR DEPOSIT (every 5s) ---
-async function pollForDeposit(walletAddress) {
+function pollForDeposit(walletAddress) {
     const statusDiv = document.getElementById('deposit-status');
     const continueBtn = document.getElementById('continue-btn');
+    const progressDiv = document.getElementById('deposit-progress');
     let interval = setInterval(async () => {
-        // --- API CALL: get_balance ---
-        // You must implement this endpoint in your backend!
-        // Example: GET /api/get_balance?wallet=... (returns {balance: 2.01})
         try {
             const res = await fetch(`${API_BASE_URL}/api/get_balance?wallet=${walletAddress}`);
             const data = await res.json();
             if (data && typeof data.balance === 'number') {
-                statusDiv.textContent = `Current balance: ${data.balance.toFixed(4)} SOL`;
+                statusDiv.innerHTML = `<i class='fa-solid fa-coins'></i> Current balance: <b>${data.balance.toFixed(4)} SOL</b>`;
                 if ([2, 5, 10].some(val => data.balance >= val)) {
                     continueBtn.disabled = false;
-                    continueBtn.textContent = 'Continue';
-                    statusDiv.textContent += ' ✅ Deposit detected!';
+                    continueBtn.innerHTML = "Continue <i class='fa-solid fa-arrow-right'></i>";
+                    statusDiv.innerHTML += " <span style='color:#00c3ff;'>✅ Deposit detected!</span>";
                     clearInterval(interval);
+                    // Show and animate progress bar
+                    showDepositProgress(data.balance);
+                    gsap.fromTo(continueBtn, { scale: 0.9 }, { scale: 1.05, yoyo: true, repeat: 5, duration: 0.2, ease: 'power1.inOut' });
                 }
             } else {
-                statusDiv.textContent = 'Waiting for deposit...';
+                statusDiv.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Waiting for deposit...";
             }
         } catch (e) {
-            statusDiv.textContent = 'Error checking balance. Retrying...';
+            statusDiv.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> Error checking balance. Retrying...";
         }
     }, 5000);
+}
+
+// --- ANIMATED PROGRESS BAR ---
+function showDepositProgress(balance) {
+    const progressDiv = document.getElementById('deposit-progress');
+    progressDiv.style.display = 'block';
+    progressDiv.innerHTML = '<div class="progress-fill"></div>';
+    // Animate fill to 100%
+    setTimeout(() => {
+        document.querySelector('.progress-fill').style.width = '100%';
+    }, 200);
+}
+
+// --- ANIMATED BACKGROUND ---
+function animateBackground() {
+    // Animated gradient using GSAP
+    const bg = document.getElementById('bg-anim');
+    gsap.to(bg, {
+        backgroundPosition: '200% 50%',
+        duration: 10,
+        repeat: -1,
+        yoyo: true,
+        ease: 'power1.inOut'
+    });
+}
+
+// --- PARTICLE SYSTEM ---
+class ParticleSystem {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.particles = [];
+        this.theme = 'purple';
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        this.initParticles();
+        this.animate();
+    }
+    setTheme(theme) {
+        this.theme = theme;
+    }
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+    initParticles() {
+        this.particles = [];
+        for (let i = 0; i < 40; i++) {
+            this.particles.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                r: 2 + Math.random() * 3,
+                dx: -0.5 + Math.random(),
+                dy: -0.5 + Math.random(),
+                alpha: 0.5 + Math.random() * 0.5
+            });
+        }
+    }
+    animate() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        for (let p of this.particles) {
+            let color = this.theme === 'purple' ? 'rgba(111,0,255,0.3)' : 'rgba(0,255,136,0.3)';
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.r, 0, 2 * Math.PI);
+            this.ctx.fillStyle = color;
+            this.ctx.globalAlpha = p.alpha;
+            this.ctx.fill();
+            this.ctx.globalAlpha = 1;
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > this.canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > this.canvas.height) p.dy *= -1;
+        }
+        requestAnimationFrame(() => this.animate());
+    }
 }
 
 // --- INITIALIZE ---
 window.onload = function() {
     renderTelegramLogin();
-    // Optionally, check if already logged in (e.g., from localStorage)
+    showScreen('login-screen');
+    animateBackground();
+    // Animate Telegram icon pulse
+    gsap.to('.pulse', { scale: 1.08, repeat: -1, yoyo: true, duration: 0.7, ease: 'power1.inOut' });
+    // Start particles
+    window.particleSystem = new ParticleSystem(document.getElementById('bg-particles'));
+    setTheme('purple');
 }; 
