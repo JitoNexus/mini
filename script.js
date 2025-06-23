@@ -3,6 +3,18 @@ const API_BASE_URL = 'https://YOUR_API_URL_HERE'; // <-- CHANGE THIS
 let currentTheme = 'purple';
 let tgUser = null;
 
+// --- DEBUG PANEL ---
+function showDebugPanel() {
+    const panel = document.getElementById('debug-panel');
+    let debugInfo = '';
+    debugInfo += '<b>window.Telegram:</b> ' + (typeof window.Telegram !== 'undefined' ? JSON.stringify(Object.keys(window.Telegram)) : 'undefined') + '<br>';
+    debugInfo += '<b>window.Telegram.WebApp:</b> ' + (window.Telegram && window.Telegram.WebApp ? JSON.stringify(Object.keys(window.Telegram.WebApp)) : 'undefined') + '<br>';
+    debugInfo += '<b>window.Telegram.WebApp.initDataUnsafe:</b> ' + (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe ? JSON.stringify(window.Telegram.WebApp.initDataUnsafe) : 'undefined') + '<br>';
+    debugInfo += '<b>User Agent:</b> ' + navigator.userAgent + '<br>';
+    panel.innerHTML = debugInfo;
+    panel.style.display = 'block';
+}
+
 // --- THEME SWITCHER ---
 function setTheme(theme) {
     document.body.classList.remove('theme-purple', 'theme-green');
@@ -15,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('theme-switcher').onclick = function() {
         setTheme(currentTheme === 'purple' ? 'green' : 'purple');
     };
+    showDebugPanel();
 });
 
 // --- SCREEN TRANSITIONS ---
@@ -46,6 +59,7 @@ function checkTelegramWebApp() {
         tgError.style.display = 'block';
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     }
+    showDebugPanel();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
