@@ -1,5 +1,5 @@
 // --- CONFIGURATION ---
-const API_BASE_URL = 'https://ea51-79-159-115-88.ngrok-free.app'; // <-- NGROK URL SET HERE
+const API_BASE_URL = 'https://aware-zero-sp-pci.trycloudflare.com'; // <-- CLOUDFLARE TUNNEL URL SET HERE
 let currentTheme = 'purple';
 let tgUser = null;
 
