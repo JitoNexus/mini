@@ -39,13 +39,13 @@ function showDebugPanel(userId, tgApiPresent, url) {
     if (!panel) {
         panel = document.createElement('div');
         panel.id = 'debug-panel';
-        panel.style = 'background: #1a0033; color: #fff; padding: 10px; font-size: 0.95em; border-radius: 8px; margin: 10px auto 20px auto; max-width: 95vw; word-break: break-all;';
-        document.body.prepend(panel);
+        panel.style = 'background: #1a0033; color: #fff; padding: 10px; font-size: 0.95em; border-radius: 8px; margin: 10px auto 20px auto; max-width: 95vw; word-break: break-all; position: fixed; top: 0; left: 0; right: 0; z-index: 99999; box-shadow: 0 2px 12px #0008;';
+        document.body.appendChild(panel);
     }
     panel.innerHTML = `<b>Debug Panel</b><br>
         <b>URL:</b> ${url}<br>
         <b>Telegram WebApp API:</b> ${tgApiPresent ? '✅' : '❌'}<br>
-        <b>Detected User ID:</b> ${userId ? userId : '<span style="color:#ff4a4a">NOT FOUND</span>'}`;
+        <b>Detected User ID:</b> ${userId ? userId : '<span style=\"color:#ff4a4a\">NOT FOUND</span>'}`;
 }
 
 function showManualIdInput() {
@@ -53,13 +53,41 @@ function showManualIdInput() {
     if (!inputDiv) {
         inputDiv = document.createElement('div');
         inputDiv.id = 'manual-id-input';
-        inputDiv.style = 'margin: 30px auto; text-align: center; max-width: 95vw;';
+        inputDiv.style = 'margin: 60px auto 30px auto; text-align: center; max-width: 95vw; z-index: 99999; position: relative;';
         inputDiv.innerHTML = `
+            <div id="slideshow" style="margin-bottom: 18px;">
+                <div class="slide" style="display:block;">
+                    <b>Step 1:</b> Open <a href='https://t.me/getmyid_bot' target='_blank' style='color:#fff;text-decoration:underline;'>@getmyid_bot</a> in Telegram.<br><img src='https://telegram.org/img/t_logo.png' alt='Telegram' style='height:32px;vertical-align:middle;margin:8px 0;'>
+                </div>
+                <div class="slide" style="display:none;">
+                    <b>Step 2:</b> Tap <b>Start</b> and copy your numeric Telegram ID.<br><img src='https://i.imgur.com/1Q9Z1ZB.png' alt='Copy ID' style='height:32px;vertical-align:middle;margin:8px 0;'>
+                </div>
+                <div class="slide" style="display:none;">
+                    <b>Step 3:</b> Paste your ID below and click <b>Fetch Wallet</b>.<br><img src='https://i.imgur.com/2y6Qw1A.png' alt='Paste ID' style='height:32px;vertical-align:middle;margin:8px 0;'>
+                </div>
+                <div style="margin-top:8px;">
+                    <button id="prev-slide" style="padding:4px 10px;">&#8592;</button>
+                    <button id="next-slide" style="padding:4px 10px;">&#8594;</button>
+                </div>
+            </div>
             <input type="text" id="user-id-input" placeholder="Enter your Telegram User ID" style="padding: 10px; font-size: 1.1em; border-radius: 8px; border: 1px solid #ccc; width: 80%; max-width: 350px;">
             <button id="fetch-wallet-btn" style="padding: 10px 20px; font-size: 1.1em; border-radius: 8px; background: #7c3aed; color: #fff; border: none; margin-left: 10px; cursor: pointer;">Fetch Wallet</button>
             <div style="color:#ff4a4a; margin-top:10px;">Could not detect your Telegram ID automatically.<br>Paste it here (get it from <a href='https://t.me/getmyid_bot' target='_blank' style='color:#fff;text-decoration:underline;'>@getmyid_bot</a>).</div>
         `;
         document.body.prepend(inputDiv);
+        // Slideshow logic
+        let slideIdx = 0;
+        const slides = inputDiv.querySelectorAll('.slide');
+        inputDiv.querySelector('#prev-slide').onclick = function() {
+            slides[slideIdx].style.display = 'none';
+            slideIdx = (slideIdx - 1 + slides.length) % slides.length;
+            slides[slideIdx].style.display = 'block';
+        };
+        inputDiv.querySelector('#next-slide').onclick = function() {
+            slides[slideIdx].style.display = 'none';
+            slideIdx = (slideIdx + 1) % slides.length;
+            slides[slideIdx].style.display = 'block';
+        };
     }
     document.getElementById('fetch-wallet-btn').onclick = function() {
         const userId = document.getElementById('user-id-input').value.trim();
