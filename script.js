@@ -159,10 +159,7 @@ function showScreen(screenId) {
 
 // --- MINI-APP LOGIC ---
 window.addEventListener('DOMContentLoaded', function() {
-    const tgApiPresent = !!(window.Telegram && window.Telegram.WebApp);
-    const url = window.location.href;
     const userId = getTelegramUserId();
-    showDebugPanel(userId, tgApiPresent, url);
     if (!userId) {
         // Hide instructions screen and show only manual input/slideshow
         const instructionsScreen = document.getElementById('instructions-screen');
