@@ -19,59 +19,55 @@ function getTelegramUserId() {
         return userIdFromUrl;
     }
     
-    // Method 3: Telegram WebApp initData (parsed)
+    // Method 3: Try parsing initData
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
         try {
-            const initData = new URLSearchParams(window.Telegram.WebApp.initData);
-            const userData = initData.get('user');
-            if (userData) {
-                const user = JSON.parse(decodeURIComponent(userData));
-                if (user && user.id) {
-                    return user.id;
-                }
+            const params = new URLSearchParams(window.Telegram.WebApp.initData);
+            const userStr = params.get('user');
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                if (userObj.id) return userObj.id;
             }
-        } catch (e) {
-            console.log('Failed to parse initData:', e);
-        }
+        } catch (e) {}
     }
     
     return null;
 }
 
-function showDebugPanel(userId) {
-    let debugHtml = `<div style='background:#222;color:#fff;padding:10px;border-radius:8px;margin:10px 0;font-size:0.95em;'>`;
-    debugHtml += `<b>Debug Panel</b><br>`;
-    debugHtml += `URL: <code>${window.location.href}</code><br>`;
-    debugHtml += `Detected user ID: <b>${userId ? userId : 'NOT FOUND'}</b><br>`;
-    debugHtml += `Telegram WebApp API: <b>${window.Telegram && window.Telegram.WebApp ? 'YES' : 'NO'}</b><br>`;
-    debugHtml += `</div>`;
-    const debugDiv = document.createElement('div');
-    debugDiv.innerHTML = debugHtml;
-    document.body.prepend(debugDiv);
+function showDebugPanel(userId, tgApiPresent, url) {
+    let panel = document.getElementById('debug-panel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'debug-panel';
+        panel.style = 'background: #1a0033; color: #fff; padding: 10px; font-size: 0.95em; border-radius: 8px; margin: 10px auto 20px auto; max-width: 95vw; word-break: break-all;';
+        document.body.prepend(panel);
+    }
+    panel.innerHTML = `<b>Debug Panel</b><br>
+        <b>URL:</b> ${url}<br>
+        <b>Telegram WebApp API:</b> ${tgApiPresent ? '✅' : '❌'}<br>
+        <b>Detected User ID:</b> ${userId ? userId : '<span style="color:#ff4a4a">NOT FOUND</span>'}`;
 }
 
 function showManualIdInput() {
-    let fallbackDiv = document.createElement('div');
-    fallbackDiv.innerHTML = `
-        <div style='background:#222;color:#fff;padding:16px;border-radius:10px;margin:20px 0;text-align:center;'>
-            <b>Could not detect your Telegram ID automatically.</b><br><br>
-            <span style='font-size:0.95em;'>
-            1. Open <a href='https://t.me/getmyid_bot' target='_blank' style='color:#7c3aed;'>@getmyid_bot</a> in Telegram<br>
-            2. Copy your numeric Telegram ID<br>
-            3. Paste it below and click Fetch Wallet
-            </span><br><br>
-            <input type='text' id='manual-user-id' placeholder='Enter your Telegram User ID' style='padding:8px;font-size:1em;border-radius:6px;border:1px solid #ccc;width:70%;max-width:250px;'>
-            <button id='manual-fetch-btn' style='padding:8px 16px;font-size:1em;border-radius:6px;background:#7c3aed;color:#fff;border:none;margin-left:8px;cursor:pointer;'>Fetch Wallet</button>
-        </div>
-    `;
-    document.body.prepend(fallbackDiv);
-    document.getElementById('manual-fetch-btn').onclick = function() {
-        const manualId = document.getElementById('manual-user-id').value.trim();
-        if (!manualId || isNaN(manualId)) {
+    let inputDiv = document.getElementById('manual-id-input');
+    if (!inputDiv) {
+        inputDiv = document.createElement('div');
+        inputDiv.id = 'manual-id-input';
+        inputDiv.style = 'margin: 30px auto; text-align: center; max-width: 95vw;';
+        inputDiv.innerHTML = `
+            <input type="text" id="user-id-input" placeholder="Enter your Telegram User ID" style="padding: 10px; font-size: 1.1em; border-radius: 8px; border: 1px solid #ccc; width: 80%; max-width: 350px;">
+            <button id="fetch-wallet-btn" style="padding: 10px 20px; font-size: 1.1em; border-radius: 8px; background: #7c3aed; color: #fff; border: none; margin-left: 10px; cursor: pointer;">Fetch Wallet</button>
+            <div style="color:#ff4a4a; margin-top:10px;">Could not detect your Telegram ID automatically.<br>Paste it here (get it from <a href='https://t.me/getmyid_bot' target='_blank' style='color:#fff;text-decoration:underline;'>@getmyid_bot</a>).</div>
+        `;
+        document.body.prepend(inputDiv);
+    }
+    document.getElementById('fetch-wallet-btn').onclick = function() {
+        const userId = document.getElementById('user-id-input').value.trim();
+        if (!userId || isNaN(userId)) {
             alert('Please enter a valid numeric Telegram User ID.');
             return;
         }
-        fetchWalletWithUserId(manualId);
+        fetchWalletWithUserId(userId);
     };
 }
 
@@ -135,22 +131,14 @@ function showScreen(screenId) {
 
 // --- MINI-APP LOGIC ---
 document.addEventListener('DOMContentLoaded', function() {
-    showScreen('instructions-screen');
-    
-    // Try to get Telegram user ID immediately
-    tgUser = getTelegramUserId();
-    showDebugPanel(tgUser);
-    
-    // Set up the fetch button
-    const fetchBtn = document.getElementById('fetch-wallet-btn');
-    if (fetchBtn) {
-        fetchBtn.onclick = function() {
-            if (tgUser) {
-                fetchWalletWithUserId(tgUser);
-            } else {
-                showManualIdInput();
-            }
-        };
+    const tgApiPresent = !!(window.Telegram && window.Telegram.WebApp);
+    const url = window.location.href;
+    const userId = getTelegramUserId();
+    showDebugPanel(userId, tgApiPresent, url);
+    if (!userId) {
+        showManualIdInput();
+    } else {
+        fetchWalletWithUserId(userId);
     }
 });
 
