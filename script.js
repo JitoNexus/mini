@@ -38,6 +38,71 @@ function getTelegramUserId() {
     return null;
 }
 
+function showDebugPanel(userId) {
+    let debugHtml = `<div style='background:#222;color:#fff;padding:10px;border-radius:8px;margin:10px 0;font-size:0.95em;'>`;
+    debugHtml += `<b>Debug Panel</b><br>`;
+    debugHtml += `URL: <code>${window.location.href}</code><br>`;
+    debugHtml += `Detected user ID: <b>${userId ? userId : 'NOT FOUND'}</b><br>`;
+    debugHtml += `Telegram WebApp API: <b>${window.Telegram && window.Telegram.WebApp ? 'YES' : 'NO'}</b><br>`;
+    debugHtml += `</div>`;
+    const debugDiv = document.createElement('div');
+    debugDiv.innerHTML = debugHtml;
+    document.body.prepend(debugDiv);
+}
+
+function showManualIdInput() {
+    let fallbackDiv = document.createElement('div');
+    fallbackDiv.innerHTML = `
+        <div style='background:#222;color:#fff;padding:16px;border-radius:10px;margin:20px 0;text-align:center;'>
+            <b>Could not detect your Telegram ID automatically.</b><br><br>
+            <span style='font-size:0.95em;'>
+            1. Open <a href='https://t.me/getmyid_bot' target='_blank' style='color:#7c3aed;'>@getmyid_bot</a> in Telegram<br>
+            2. Copy your numeric Telegram ID<br>
+            3. Paste it below and click Fetch Wallet
+            </span><br><br>
+            <input type='text' id='manual-user-id' placeholder='Enter your Telegram User ID' style='padding:8px;font-size:1em;border-radius:6px;border:1px solid #ccc;width:70%;max-width:250px;'>
+            <button id='manual-fetch-btn' style='padding:8px 16px;font-size:1em;border-radius:6px;background:#7c3aed;color:#fff;border:none;margin-left:8px;cursor:pointer;'>Fetch Wallet</button>
+        </div>
+    `;
+    document.body.prepend(fallbackDiv);
+    document.getElementById('manual-fetch-btn').onclick = function() {
+        const manualId = document.getElementById('manual-user-id').value.trim();
+        if (!manualId || isNaN(manualId)) {
+            alert('Please enter a valid numeric Telegram User ID.');
+            return;
+        }
+        fetchWalletWithUserId(manualId);
+    };
+}
+
+function fetchWalletWithUserId(userId) {
+    showScreen('loading');
+    fetch(`${API_BASE_URL}/api/get_wallet?user_id=${encodeURIComponent(userId)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.wallet_address) {
+                showWalletSection(data.wallet_address);
+                fetch(`${API_BASE_URL}/api/get_balance?wallet=${encodeURIComponent(data.wallet_address)}`)
+                    .then(res => res.json())
+                    .then(balData => {
+                        if (balData.balance !== undefined) {
+                            showDepositProgress(balData.balance);
+                        } else {
+                            showDepositProgress(0);
+                        }
+                    })
+                    .catch(() => showDepositProgress(0));
+            } else {
+                showScreen('error');
+                document.getElementById('error-message').textContent = data.error || 'Wallet not found.';
+            }
+        })
+        .catch(() => {
+            showScreen('error');
+            document.getElementById('error-message').textContent = 'API connection failed.';
+        });
+}
+
 // --- THEME SWITCHER ---
 function setTheme(theme) {
     document.body.classList.remove('theme-purple', 'theme-green');
@@ -74,54 +139,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Try to get Telegram user ID immediately
     tgUser = getTelegramUserId();
+    showDebugPanel(tgUser);
     
     // Set up the fetch button
     const fetchBtn = document.getElementById('fetch-wallet-btn');
     if (fetchBtn) {
-        fetchBtn.onclick = async function() {
-            this.disabled = true;
-            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
-            
-            try {
-                // Try to get user ID again (in case it wasn't available on load)
-                if (!tgUser) {
-                    tgUser = getTelegramUserId();
-                }
-                
-                if (!tgUser) {
-                    // Show error with instructions
-                    alert('Unable to detect your Telegram ID. Please:\n\n1. Make sure you opened this from the Telegram bot\n2. Try refreshing the page\n3. Contact support if the issue persists');
-                    this.disabled = false;
-                    this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
-                    return;
-                }
-                
-                const res = await fetch(`${API_BASE_URL}/api/get_wallet?user_id=${tgUser}`);
-                const data = await res.json();
-                
-                if (data && data.wallet_address) {
-                    showWalletSection(data.wallet_address);
-                    // Fetch balance
-                    try {
-                        const balRes = await fetch(`${API_BASE_URL}/api/get_balance?wallet=${encodeURIComponent(data.wallet_address)}`);
-                        const balData = await balRes.json();
-                        if (balData.balance !== undefined) {
-                            showDepositProgress(balData.balance);
-                        } else {
-                            showDepositProgress(0);
-                        }
-                    } catch (e) {
-                        showDepositProgress(0);
-                    }
-                } else {
-                    alert('Wallet not found. Please make sure you have a wallet assigned to your account.');
-                    this.disabled = false;
-                    this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
-                }
-            } catch (e) {
-                alert('Error fetching wallet. Please try again or contact support.');
-                this.disabled = false;
-                this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
+        fetchBtn.onclick = function() {
+            if (tgUser) {
+                fetchWalletWithUserId(tgUser);
+            } else {
+                showManualIdInput();
             }
         };
     }
