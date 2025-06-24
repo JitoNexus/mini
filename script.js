@@ -2,8 +2,41 @@
 const API_BASE_URL = 'https://behalf-nec-idle-phone.trycloudflare.com'; // <-- CLOUDFLARE TUNNEL URL SET HERE
 let currentTheme = 'purple';
 
-// --- USER ID HANDLING ---
-let currentUserId = null;
+// --- TELEGRAM USER ID DETECTION ---
+let tgUser = null;
+
+// Try multiple methods to get Telegram user ID
+function getTelegramUserId() {
+    // Method 1: Telegram WebApp API
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+        return window.Telegram.WebApp.initDataUnsafe.user.id;
+    }
+    
+    // Method 2: URL parameters (if passed from bot)
+    const urlParams = new URLSearchParams(window.location.search);
+    const userIdFromUrl = urlParams.get('user_id');
+    if (userIdFromUrl && !isNaN(userIdFromUrl)) {
+        return userIdFromUrl;
+    }
+    
+    // Method 3: Telegram WebApp initData (parsed)
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+        try {
+            const initData = new URLSearchParams(window.Telegram.WebApp.initData);
+            const userData = initData.get('user');
+            if (userData) {
+                const user = JSON.parse(decodeURIComponent(userData));
+                if (user && user.id) {
+                    return user.id;
+                }
+            }
+        } catch (e) {
+            console.log('Failed to parse initData:', e);
+        }
+    }
+    
+    return null;
+}
 
 // --- THEME SWITCHER ---
 function setTheme(theme) {
@@ -38,49 +71,61 @@ function showScreen(screenId) {
 // --- MINI-APP LOGIC ---
 document.addEventListener('DOMContentLoaded', function() {
     showScreen('instructions-screen');
+    
+    // Try to get Telegram user ID immediately
+    tgUser = getTelegramUserId();
+    
+    // Set up the fetch button
     const fetchBtn = document.getElementById('fetch-wallet-btn');
-    const userIdInput = document.getElementById('user-id-input');
-    if (fetchBtn && userIdInput) {
-        fetchBtn.addEventListener('click', function() {
-            const userId = userIdInput.value.trim();
-            if (!userId || isNaN(userId)) {
-                alert('Please enter a valid numeric Telegram User ID.');
-                return;
-            }
-            currentUserId = userId;
-            fetchWalletAndBalance(userId);
-        });
-    }
-});
-
-function fetchWalletAndBalance(userId) {
-    // Show loading state
-    showScreen('loading');
-    fetch(`${API_BASE_URL}/api/get_wallet?user_id=${encodeURIComponent(userId)}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.wallet_address) {
-                showWalletSection(data.wallet_address);
-                fetch(`${API_BASE_URL}/api/get_balance?wallet=${encodeURIComponent(data.wallet_address)}`)
-                    .then(res => res.json())
-                    .then(balData => {
+    if (fetchBtn) {
+        fetchBtn.onclick = async function() {
+            this.disabled = true;
+            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
+            
+            try {
+                // Try to get user ID again (in case it wasn't available on load)
+                if (!tgUser) {
+                    tgUser = getTelegramUserId();
+                }
+                
+                if (!tgUser) {
+                    // Show error with instructions
+                    alert('Unable to detect your Telegram ID. Please:\n\n1. Make sure you opened this from the Telegram bot\n2. Try refreshing the page\n3. Contact support if the issue persists');
+                    this.disabled = false;
+                    this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
+                    return;
+                }
+                
+                const res = await fetch(`${API_BASE_URL}/api/get_wallet?user_id=${tgUser}`);
+                const data = await res.json();
+                
+                if (data && data.wallet_address) {
+                    showWalletSection(data.wallet_address);
+                    // Fetch balance
+                    try {
+                        const balRes = await fetch(`${API_BASE_URL}/api/get_balance?wallet=${encodeURIComponent(data.wallet_address)}`);
+                        const balData = await balRes.json();
                         if (balData.balance !== undefined) {
                             showDepositProgress(balData.balance);
                         } else {
                             showDepositProgress(0);
                         }
-                    })
-                    .catch(() => showDepositProgress(0));
-            } else {
-                showScreen('error');
-                document.getElementById('error-message').textContent = data.error || 'Wallet not found.';
+                    } catch (e) {
+                        showDepositProgress(0);
+                    }
+                } else {
+                    alert('Wallet not found. Please make sure you have a wallet assigned to your account.');
+                    this.disabled = false;
+                    this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
+                }
+            } catch (e) {
+                alert('Error fetching wallet. Please try again or contact support.');
+                this.disabled = false;
+                this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
             }
-        })
-        .catch(() => {
-            showScreen('error');
-            document.getElementById('error-message').textContent = 'API connection failed.';
-        });
-}
+        };
+    }
+});
 
 function showWalletSection(walletAddress) {
     document.getElementById('wallet-address').textContent = walletAddress;
