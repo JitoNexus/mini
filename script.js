@@ -57,13 +57,13 @@ function showManualIdInput() {
         inputDiv.innerHTML = `
             <div id="slideshow" style="margin-bottom: 18px;">
                 <div class="slide" style="display:block;">
-                    <b>Step 1:</b> Open <a href='https://t.me/getmyid_bot' target='_blank' style='color:#fff;text-decoration:underline;'>@getmyid_bot</a> in Telegram.<br><img src='https://telegram.org/img/t_logo.png' alt='Telegram' style='height:32px;vertical-align:middle;margin:8px 0;'>
+                    <b>Step 1:</b> Open <a href='https://t.me/getmyid_bot' target='_blank' style='color:#fff;text-decoration:underline;'>@getmyid_bot</a> in Telegram.
                 </div>
                 <div class="slide" style="display:none;">
-                    <b>Step 2:</b> Tap <b>Start</b> and copy your numeric Telegram ID.<br><img src='https://i.imgur.com/1Q9Z1ZB.png' alt='Copy ID' style='height:32px;vertical-align:middle;margin:8px 0;'>
+                    <b>Step 2:</b> Tap <b>Start</b> and copy your numeric Telegram ID.
                 </div>
                 <div class="slide" style="display:none;">
-                    <b>Step 3:</b> Paste your ID below and click <b>Fetch Wallet</b>.<br><img src='https://i.imgur.com/2y6Qw1A.png' alt='Paste ID' style='height:32px;vertical-align:middle;margin:8px 0;'>
+                    <b>Step 3:</b> Paste your ID below and click <b>Fetch Wallet</b>.
                 </div>
                 <div style="margin-top:8px;">
                     <button id="prev-slide" style="padding:4px 10px;">&#8592;</button>
@@ -71,7 +71,7 @@ function showManualIdInput() {
                 </div>
             </div>
             <input type="text" id="user-id-input" placeholder="Enter your Telegram User ID" style="padding: 10px; font-size: 1.1em; border-radius: 8px; border: 1px solid #ccc; width: 80%; max-width: 350px;">
-            <button id="fetch-wallet-btn" style="padding: 10px 20px; font-size: 1.1em; border-radius: 8px; background: #7c3aed; color: #fff; border: none; margin-left: 10px; cursor: pointer;">Fetch Wallet</button>
+            <button id="manual-fetch-wallet-btn" style="padding: 10px 20px; font-size: 1.1em; border-radius: 8px; background: #7c3aed; color: #fff; border: none; margin-left: 10px; cursor: pointer;">Fetch Wallet</button>
             <div style="color:#ff4a4a; margin-top:10px;">Could not detect your Telegram ID automatically.<br>Paste it here (get it from <a href='https://t.me/getmyid_bot' target='_blank' style='color:#fff;text-decoration:underline;'>@getmyid_bot</a>).</div>
         `;
         document.body.prepend(inputDiv);
@@ -89,10 +89,13 @@ function showManualIdInput() {
             slides[slideIdx].style.display = 'block';
         };
     }
-    document.getElementById('fetch-wallet-btn').onclick = function() {
+    const manualFetchBtn = document.getElementById('manual-fetch-wallet-btn');
+    manualFetchBtn.onclick = function() {
+        this.disabled = true;
         const userId = document.getElementById('user-id-input').value.trim();
         if (!userId || isNaN(userId)) {
             alert('Please enter a valid numeric Telegram User ID.');
+            this.disabled = false;
             return;
         }
         fetchWalletWithUserId(userId);
@@ -100,30 +103,49 @@ function showManualIdInput() {
 }
 
 function fetchWalletWithUserId(userId) {
-    showScreen('loading');
-    fetch(`${API_BASE_URL}/api/get_wallet?user_id=${encodeURIComponent(userId)}`)
-        .then(res => res.json())
+    const instructionsScreen = document.getElementById('instructions-screen');
+    const manualIdScreen = document.getElementById('manual-id-input');
+    
+    if (instructionsScreen) instructionsScreen.style.display = 'none';
+    if (manualIdScreen) manualIdScreen.style.display = 'none';
+
+    showScreen('wallet-screen');
+    document.getElementById('deposit-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching wallet...';
+
+    let walletAddress;
+
+    fetch(`${API_BASE_URL}/api/get_wallet?user_id=${userId}`)
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || `Wallet not found (HTTP ${response.status})`) });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.wallet_address) {
-                showWalletSection(data.wallet_address);
-                fetch(`${API_BASE_URL}/api/get_balance?wallet=${encodeURIComponent(data.wallet_address)}`)
-                    .then(res => res.json())
-                    .then(balData => {
-                        if (balData.balance !== undefined) {
-                            showDepositProgress(balData.balance);
-                        } else {
-                            showDepositProgress(0);
-                        }
-                    })
-                    .catch(() => showDepositProgress(0));
+                walletAddress = data.wallet_address;
+                showWalletSection(walletAddress);
+                return fetch(`${API_BASE_URL}/api/get_balance?wallet=${walletAddress}`);
             } else {
-                showScreen('error');
-                document.getElementById('error-message').textContent = data.error || 'Wallet not found.';
+                throw new Error(data.error || 'Wallet address not found in response.');
             }
         })
-        .catch(() => {
-            showScreen('error');
-            document.getElementById('error-message').textContent = 'API connection failed.';
+        .then(response => {
+            if (!response) return;
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || 'Could not fetch balance') });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data) return;
+            const balance = data.balance_sol;
+            document.getElementById('deposit-status').innerHTML = `Balance: <b>${balance.toFixed(4)} SOL</b>. Waiting for deposit...`;
+            pollForDeposit(walletAddress);
+        })
+        .catch(error => {
+            showScreen('wallet-screen');
+            document.getElementById('deposit-status').innerHTML = `<span style="color: #ff4a4a; font-weight: bold;">Error: ${error.message}</span>`;
         });
 }
 
@@ -161,12 +183,17 @@ function showScreen(screenId) {
 window.addEventListener('DOMContentLoaded', function() {
     const userId = getTelegramUserId();
     if (!userId) {
-        // Hide instructions screen and show only manual input/slideshow
         const instructionsScreen = document.getElementById('instructions-screen');
         if (instructionsScreen) instructionsScreen.style.display = 'none';
         showManualIdInput();
     } else {
-        fetchWalletWithUserId(userId);
+        const fetchBtn = document.getElementById('fetch-wallet-btn');
+        if (fetchBtn) {
+            fetchBtn.onclick = function() {
+                this.disabled = true;
+                fetchWalletWithUserId(userId);
+            };
+        }
     }
 });
 
