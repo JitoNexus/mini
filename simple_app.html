@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JitoX Simple Test</title>
+    <style>
+        body { font-family: sans-serif; background-color: #1c1c1e; color: #fff; padding: 20px; text-align: center; }
+        input { padding: 10px; font-size: 1.2em; border-radius: 8px; border: 1px solid #555; background-color: #333; color: #fff; }
+        button { padding: 10px 20px; font-size: 1.2em; border-radius: 8px; background: #007aff; color: #fff; border: none; cursor: pointer; margin-left: 10px; }
+        #result { margin-top: 20px; padding: 15px; background-color: #2c2c2e; border-radius: 8px; font-size: 1.1em; word-wrap: break-word; }
+        .error { color: #ff453a; }
+    </style>
+</head>
+<body>
+    <h1>JitoX API Test</h1>
+    <p>Enter your Telegram User ID below and click Fetch.</p>
+    <input type="text" id="userIdInput" placeholder="Enter Telegram User ID">
+    <button id="fetchButton">Fetch Wallet</button>
+    <div id="result"></div>
+
+    <script>
+        const API_BASE_URL = 'https://behalf-nec-idle-phone.trycloudflare.com';
+
+        document.getElementById('fetchButton').addEventListener('click', () => {
+            const userId = document.getElementById('userIdInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Loading...';
+            resultDiv.className = '';
+
+            if (!userId || isNaN(userId)) {
+                resultDiv.innerHTML = 'Please enter a valid numeric User ID.';
+                resultDiv.className = 'error';
+                return;
+            }
+
+            fetch(`${API_BASE_URL}/api/get_wallet?user_id=${userId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { 
+                            throw new Error(err.error || `API Error (HTTP ${response.status})`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.wallet_address) {
+                        resultDiv.innerHTML = `
+                            <strong>Wallet Address:</strong> ${data.wallet_address}<br>
+                            <em>Fetching balance...</em>
+                        `;
+                        return fetch(`${API_BASE_URL}/api/get_balance?wallet=${data.wallet_address}`);
+                    } else {
+                        throw new Error(data.error || 'Wallet address not found in response.');
+                    }
+                })
+                .then(response => {
+                    if (!response) return;
+                     if (!response.ok) {
+                        return response.json().then(err => { 
+                            throw new Error(err.error || 'Could not fetch balance.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data) return;
+                    const walletAddress = resultDiv.innerHTML.split('</strong> ')[1].split('<br>')[0];
+                    resultDiv.innerHTML = `
+                        <strong>Wallet Address:</strong> ${walletAddress}<br>
+                        <strong>Balance:</strong> ${data.balance_sol.toFixed(6)} SOL
+                    `;
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                    resultDiv.className = 'error';
+                });
+        });
+    </script>
+</body>
+</html> 
