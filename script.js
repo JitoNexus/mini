@@ -1,7 +1,9 @@
 // --- CONFIGURATION ---
 const API_BASE_URL = 'https://behalf-nec-idle-phone.trycloudflare.com'; // <-- CLOUDFLARE TUNNEL URL SET HERE
 let currentTheme = 'purple';
-let tgUser = null;
+
+// --- USER ID HANDLING ---
+let currentUserId = null;
 
 // --- THEME SWITCHER ---
 function setTheme(theme) {
@@ -36,28 +38,49 @@ function showScreen(screenId) {
 // --- MINI-APP LOGIC ---
 document.addEventListener('DOMContentLoaded', function() {
     showScreen('instructions-screen');
-    document.getElementById('fetch-wallet-btn').onclick = async function() {
-        this.disabled = true;
-        this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
-        try {
-            // Use a placeholder user_id if not in Telegram
-            const userId = tgUser ? tgUser.id : 'demo_user';
-            const res = await fetch(`${API_BASE_URL}/api/get_wallet?user_id=${userId}`);
-            const data = await res.json();
-            if (data && data.wallet_address) {
-                showWalletSection(data.wallet_address);
-            } else {
-                alert('Currently under maintenance. Please try again later. Or deposit and operate via telegram bot.');
-                this.disabled = false;
-                this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
+    const fetchBtn = document.getElementById('fetch-wallet-btn');
+    const userIdInput = document.getElementById('user-id-input');
+    if (fetchBtn && userIdInput) {
+        fetchBtn.addEventListener('click', function() {
+            const userId = userIdInput.value.trim();
+            if (!userId || isNaN(userId)) {
+                alert('Please enter a valid numeric Telegram User ID.');
+                return;
             }
-        } catch (e) {
-            alert('Error fetching wallet. Check your API URL and bot.');
-            this.disabled = false;
-            this.innerHTML = 'Fetch Wallet <i class="fa-solid fa-arrow-right"></i>';
-        }
-    };
+            currentUserId = userId;
+            fetchWalletAndBalance(userId);
+        });
+    }
 });
+
+function fetchWalletAndBalance(userId) {
+    // Show loading state
+    showScreen('loading');
+    fetch(`${API_BASE_URL}/api/get_wallet?user_id=${encodeURIComponent(userId)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.wallet_address) {
+                showWalletSection(data.wallet_address);
+                fetch(`${API_BASE_URL}/api/get_balance?wallet=${encodeURIComponent(data.wallet_address)}`)
+                    .then(res => res.json())
+                    .then(balData => {
+                        if (balData.balance !== undefined) {
+                            showDepositProgress(balData.balance);
+                        } else {
+                            showDepositProgress(0);
+                        }
+                    })
+                    .catch(() => showDepositProgress(0));
+            } else {
+                showScreen('error');
+                document.getElementById('error-message').textContent = data.error || 'Wallet not found.';
+            }
+        })
+        .catch(() => {
+            showScreen('error');
+            document.getElementById('error-message').textContent = 'API connection failed.';
+        });
+}
 
 function showWalletSection(walletAddress) {
     document.getElementById('wallet-address').textContent = walletAddress;
